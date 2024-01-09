@@ -1,0 +1,27 @@
+# EPEX Spot Sensor
+
+This component is an addition to the [EPEX Spot](https://github.com/mampfes/ha_epex_spot) integration.
+
+EPEX Spot Sensor add one or more binary sensors which can be configured to turn on at the cheapest or most expensive time interval of the day. The length of the time interval can be configured, as well as whether the interval shall be used contiguously or intermittently.
+
+![Helper Sensor](/images/setup.png)
+
+
+If you like this component, please give it a star on [github](https://github.com/mampfes/hacs_epex_spot_sensor).
+
+## Installation
+
+1. Ensure that [HACS](https://hacs.xyz) is installed.
+
+2. Add **EPEX Spot Sensor** repository as `Custom Repository` to list integrations in HACS.
+
+3. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
+
+   [![Open your Home Assistant instance and start setting up a new helpers.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=epex_spot_sensor)
+
+In case you would like to install manually:
+
+1. Copy the folder `custom_components/epex_spot_sensor` to `custom_components` in your Home Assistant `config` folder.
+2. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
+
+   [![Open your Home Assistant instance and start setting up a new helpers.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=epex_spot_sensor)
