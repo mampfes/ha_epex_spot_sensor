@@ -9,12 +9,12 @@ class Interval:
         self,
         start_time: datetime,
         end_time: datetime,
-        price_eur_per_mwh: float,
+        price: float,
         rank: int,
     ):
         self._start_time = start_time
         self._end_time = end_time
-        self._price_eur_per_mwh = price_eur_per_mwh
+        self._price = price
         self._rank = rank
 
     @property
@@ -26,15 +26,15 @@ class Interval:
         return self._end_time
 
     @property
-    def price_eur_per_mwh(self):
-        return self._price_eur_per_mwh
+    def price(self):
+        return self._price
 
     @property
     def rank(self):
         return self._rank
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(start: {self._start_time.isoformat()}, end: {self._end_time.isoformat()}, marketprice: {self._price_eur_per_mwh}, rank: {self._rank})"  # noqa: E501
+        return f"{self.__class__.__name__}(start: {self._start_time.isoformat()}, end: {self._end_time.isoformat()}, marketprice: {self._price}, rank: {self._rank})"  # noqa: E501
 
 
 def calc_intervals_for_intermittent(
@@ -59,7 +59,7 @@ def calc_intervals_for_intermittent(
     ]
 
     # sort by price
-    marketdata.sort(key=lambda e: e.price_eur_per_mwh, reverse=most_expensive)
+    marketdata.sort(key=lambda e: e.price, reverse=most_expensive)
 
     active_time: timedelta = timedelta(seconds=0)
     intervals = []
@@ -77,7 +77,7 @@ def calc_intervals_for_intermittent(
             active_duration_in_this_segment = duration - active_time
 
         price = (
-            mp.price_eur_per_mwh
+            mp.price
             * active_duration_in_this_segment.total_seconds()
             / SECONDS_PER_HOUR
         )
@@ -86,7 +86,7 @@ def calc_intervals_for_intermittent(
             Interval(
                 start_time=interval_start_time,
                 end_time=interval_start_time + active_duration_in_this_segment,
-                price_eur_per_mwh=price,
+                price=price,
                 rank=count,
             )
         )

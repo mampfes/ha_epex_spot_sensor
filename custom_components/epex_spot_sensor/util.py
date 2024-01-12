@@ -12,16 +12,22 @@ class Marketprice:
         self._start_time = cv.datetime(entry["start_time"])
         self._end_time = cv.datetime(entry["end_time"])
         if x := entry.get("price_eur_per_mwh"):
-            self._price_eur_per_mwh = x
-            self._uom = "EUR/MWh"
+            self._price = x
+            self._price_uom = "EUR/MWh"
         elif x := entry.get("price_gbp_per_mwh"):
-            self._price_eur_per_mwh = x
-            self._uom = "GBP/MWH"
+            self._price = x
+            self._price_uom = "GBP/MWh"
+        elif x := entry.get("price_ct_per_kwh"):
+            self._price = x
+            self._price_uom = "ct/kWh"
+        elif x := entry.get("price_pence_per_kwh"):
+            self._price = x
+            self._price_uom = "pence/kWh"
         else:
             raise KeyError()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(start: {self._start_time.isoformat()}, end: {self._end_time.isoformat()}, marketprice: {self._price_eur_per_mwh} {self._uom})"  # noqa: E501
+        return f"{self.__class__.__name__}(start: {self._start_time.isoformat()}, end: {self._end_time.isoformat()}, marketprice: {self._price} {self._price_uom})"  # noqa: E501
 
     @property
     def start_time(self):
@@ -32,12 +38,12 @@ class Marketprice:
         return self._end_time
 
     @property
-    def price_eur_per_mwh(self):
-        return self._price_eur_per_mwh
+    def price(self):
+        return self._price
 
     @property
-    def price_eur_per_mwh_name(self):
-        self._price_eur_per_mwh_name
+    def price_uom(self):
+        return self._price_uom
 
 
 def get_marketdata_from_sensor_attrs(attributes):

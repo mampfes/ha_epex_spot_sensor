@@ -282,8 +282,6 @@ class BinarySensor(BinarySensorEntity):
                 ATTR_START_TIME: dt_util.as_local(e.start_time).isoformat(),
                 ATTR_END_TIME: dt_util.as_local(e.end_time).isoformat(),
                 ATTR_RANK: e.rank,
-                # ATTR_PRICE_PER_MWH: e.price_eur_per_mwh,
-                # ATTR_PRICE_PER_KWH: e.price_eur_per_mwh / 10,
             }
             for e in sorted(intervals, key=lambda e: e.start_time)
         ]
