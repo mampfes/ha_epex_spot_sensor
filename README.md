@@ -6,16 +6,20 @@ EPEX Spot Sensor add one or more binary sensors which can be configured to turn 
 
 ![Helper Sensor](/images/setup.png)
 
-
 If you like this component, please give it a star on [github](https://github.com/mampfes/hacs_epex_spot_sensor).
 
 ## Installation
 
 1. Ensure that [HACS](https://hacs.xyz) is installed.
 
-2. Add **EPEX Spot Sensor** repository as `Custom Repository` to list integrations in HACS.
+2. Open HACS, then select `Integrations`.
 
-3. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
+3. Select &#8942; and then `Custom repositories`.
+
+4. Set `Repository` to *https://github.com/mampfes/ha_epex_spot_sensor*  
+   and `Category` to _Integration_.
+
+5. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
 
    [![Open your Home Assistant instance and start setting up a new helpers.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=epex_spot_sensor)
 
