@@ -29,7 +29,7 @@ def _calc_interval_price(marketdata, start_time: datetime, duration: timedelta):
             active_duration_in_this_segment = mp.end_time - start_time
 
         total_price += (
-            mp.price_eur_per_mwh
+            mp.price
             * active_duration_in_this_segment.total_seconds()
             / SECONDS_PER_HOUR
         )

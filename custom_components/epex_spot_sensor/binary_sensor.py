@@ -213,7 +213,6 @@ class BinarySensor(BinarySensorEntity):
     @callback
     def _update_state(self) -> None:
         now = dt_util.now()
-        now_time = now.time()
 
         # earliest_start always refers to today
         earliest_start = datetime.combine(now, self._earliest_start_time, now.tzinfo)
@@ -221,19 +220,21 @@ class BinarySensor(BinarySensorEntity):
         # latest_end may refer to today or tomorrow
         latest_end = datetime.combine(now, self._latest_end_time, now.tzinfo)
 
-        if self._latest_end_time > self._earliest_start_time:
-            # start and end refer to the same day (which is today for now)
-            self._interval_enabled = (
-                self._earliest_start_time <= now_time < self._latest_end_time
-            )
-        else:
-            # start refers to today, end refers to tomorrow
-            # -> there are 2 intervals: from start to midnight and from midnight to end
-            self._interval_enabled = (
-                self._earliest_start_time <= now_time
-                or now_time < self._latest_end_time
-            )
-            latest_end += timedelta(days=1)
+        if self._latest_end_time <= self._earliest_start_time:
+            # start and end refers to different days
+            # --> check if we are still within the configured timespan
+            # (which may have started yesterday)
+            if now < latest_end:
+                # yes, we are early in the day and before latest_end
+                earliest_start -= timedelta(days=1)
+            else:
+                # no, we are behind latest_end, therefore we set latest_end time to
+                # tomorrow (and use today for earliest_time)
+                # -> there are 2 intervals: from start to midnight and from midnight
+                # to end
+                latest_end += timedelta(days=1)
+
+        self._interval_enabled = earliest_start <= now <= latest_end
 
         if self._interval_mode == IntervalModes.INTERMITTENT.value:
             self._update_state_for_intermittent(earliest_start, latest_end, now)
