@@ -140,12 +140,13 @@ class BinarySensor(BinarySensorEntity):
 
         # price sensor values
         self._sensor_attributes = None
+        self._cached_marketdata = []
 
         # calculated values
         self.sensor_value: float | None = None  # TODO: remove
         self._interval_enabled: bool = False
         self._state: bool | None = None
-        self._intervals = []
+        self._intervals: list | None = None
 
         def _on_price_sensor_state_update() -> None:
             """Handle sensor state changes."""
@@ -246,7 +247,7 @@ class BinarySensor(BinarySensorEntity):
     def _update_state_for_intermittent(
         self, earliest_start: time, latest_end: time, now: datetime
     ):
-        marketdata = get_marketdata_from_sensor_attrs(self._sensor_attributes)
+        marketdata = self._get_marketdata()
 
         intervals = calc_intervals_for_intermittent(
             marketdata=marketdata,
@@ -257,6 +258,11 @@ class BinarySensor(BinarySensorEntity):
         )
 
         if intervals is None:
+            # no intervals found, probably because data for next day is missing
+            if now < earliest_start:
+                # we are before the start time, o we just say sensor-state=off instead of unavailable # noqa: E501
+                self._state = False
+                self._intervals = []
             return
 
         self._state = is_now_in_intervals(now, intervals)
@@ -264,7 +270,7 @@ class BinarySensor(BinarySensorEntity):
         # try to calculate intervals for next day also
         earliest_start += timedelta(days=1)
         if earliest_start >= latest_end:
-            # do calculation only if latest_end is limited to 24h from earliest_start,
+            # do calculation only if latest_end is limited to 24h from earliest_start, # noqa: E501
             # --> avoid calculation if latest_end includes all available marketdata
             latest_end += timedelta(days=1)
             intervals2 = calc_intervals_for_intermittent(
@@ -290,7 +296,7 @@ class BinarySensor(BinarySensorEntity):
     def _update_state_for_contigous(
         self, earliest_start: time, latest_end: time, now: datetime
     ):
-        marketdata = get_marketdata_from_sensor_attrs(self._sensor_attributes)
+        marketdata = self._get_marketdata()
 
         result = calc_interval_for_contiguous(
             marketdata,
@@ -301,6 +307,11 @@ class BinarySensor(BinarySensorEntity):
         )
 
         if result is None:
+            # no interval found, probably because data for next day is missing
+            if now < earliest_start:
+                # we are before the start time, o we just say sensor-state=off instead of unavailable # noqa: E501
+                self._state = False
+                self._intervals = []
             return
 
         self._state = result["start"] <= now < result["end"]
@@ -336,3 +347,23 @@ class BinarySensor(BinarySensorEntity):
                     ATTR_END_TIME: dt_util.as_local(result["end"]).isoformat(),
                 }
             )
+
+    def _get_marketdata(self):
+        marketdata = get_marketdata_from_sensor_attrs(self._sensor_attributes)
+
+        # now merge it with the cached info
+        marketdata = [*marketdata, *self._cached_marketdata]
+
+        # remove outdated entries (exact time doesn't matter)
+        start_time = dt_util.now() - timedelta(days=1)
+        marketdata = filter(lambda e: e.start_time >= start_time, marketdata)
+
+        # eliminate duplicates
+        dummy = {e.start_time: e for e in marketdata}
+
+        # sort by start_time again
+        marketdata = sorted(dummy.values(), key=lambda e: e.start_time)
+
+        self._cached_marketdata = marketdata
+
+        return marketdata
