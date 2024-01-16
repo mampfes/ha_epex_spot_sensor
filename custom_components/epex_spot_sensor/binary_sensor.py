@@ -145,7 +145,7 @@ class BinarySensor(BinarySensorEntity):
         self.sensor_value: float | None = None  # TODO: remove
         self._interval_enabled: bool = False
         self._state: bool | None = None
-        self._intervals = []
+        self._intervals: list | None = None
 
         def _on_price_sensor_state_update() -> None:
             """Handle sensor state changes."""
@@ -257,6 +257,11 @@ class BinarySensor(BinarySensorEntity):
         )
 
         if intervals is None:
+            # no intervals found, probably because data for next day is missing
+            if now < earliest_start:
+                # we are before the start time, o we just say sensor-state=off instead of unavailable # noqa: E501
+                self._state = False
+                self._intervals = []
             return
 
         self._state = is_now_in_intervals(now, intervals)
@@ -264,7 +269,7 @@ class BinarySensor(BinarySensorEntity):
         # try to calculate intervals for next day also
         earliest_start += timedelta(days=1)
         if earliest_start >= latest_end:
-            # do calculation only if latest_end is limited to 24h from earliest_start,
+            # do calculation only if latest_end is limited to 24h from earliest_start, # noqa: E501
             # --> avoid calculation if latest_end includes all available marketdata
             latest_end += timedelta(days=1)
             intervals2 = calc_intervals_for_intermittent(
@@ -301,6 +306,11 @@ class BinarySensor(BinarySensorEntity):
         )
 
         if result is None:
+            # no interval found, probably because data for next day is missing
+            if now < earliest_start:
+                # we are before the start time, o we just say sensor-state=off instead of unavailable # noqa: E501
+                self._state = False
+                self._intervals = []
             return
 
         self._state = result["start"] <= now < result["end"]
