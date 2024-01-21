@@ -24,7 +24,7 @@ class Marketprice:
             self._price = x
             self._price_uom = "pence/kWh"
         else:
-            raise KeyError()
+            raise KeyError("No valid price field found. Check price sensor.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(start: {self._start_time.isoformat()}, end: {self._end_time.isoformat()}, marketprice: {self._price} {self._price_uom})"  # noqa: E501
