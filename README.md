@@ -19,9 +19,17 @@ If you like this component, please give it a star on [github](https://github.com
 4. Set `Repository` to *https://github.com/mampfes/ha_epex_spot_sensor*  
    and `Category` to _Integration_.
 
-5. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
+5. Install **EPEX Spot Sensor** integration via HACS:
+
+   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mampfes&repository=ha_epex_spot_sensor)
+
+   If the button doesn't work: Open `HACS` > `Integrations` > `Explore & Download Repositories` and select integration `EPEX Spot Sensor`.
+
+6. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
 
    [![Open your Home Assistant instance and start setting up a new helpers.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=epex_spot_sensor)
+
+   If the button doesn't work: Open `Settings` > `Devices & services` > `Helpers` > `Create Helper` and select `EPEX Spot Sensor`.
 
 In case you would like to install manually:
 
@@ -29,3 +37,5 @@ In case you would like to install manually:
 2. Add helper(s) provided by **EPEX Spot Sensor** to Home Assistant:
 
    [![Open your Home Assistant instance and start setting up a new helpers.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=epex_spot_sensor)
+
+   If the button doesn't work: Open `Settings` > `Devices & services` > `Helpers` > `Create Helper` and select `EPEX Spot Sensor`.
