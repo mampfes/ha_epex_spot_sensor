@@ -349,7 +349,13 @@ class BinarySensor(BinarySensorEntity):
             )
 
     def _get_marketdata(self):
-        marketdata = get_marketdata_from_sensor_attrs(self._sensor_attributes)
+        try:
+            marketdata = get_marketdata_from_sensor_attrs(self._sensor_attributes)
+        except KeyError as error:
+            _LOGGER.error(
+                f'Invalid price sensor "{self._entity_id}" selected for EPEX Spot Sensor "{self._attr_name}": {error}'  # noqa:E501
+            )
+            return []
 
         # now merge it with the cached info
         marketdata = [*marketdata, *self._cached_marketdata]

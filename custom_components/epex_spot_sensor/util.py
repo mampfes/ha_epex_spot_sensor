@@ -24,7 +24,7 @@ class Marketprice:
             self._price = x
             self._price_uom = "pence/kWh"
         else:
-            raise KeyError("No valid price field found. Check price sensor.")
+            raise KeyError("No valid price field found.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(start: {self._start_time.isoformat()}, end: {self._end_time.isoformat()}, marketprice: {self._price} {self._price_uom})"  # noqa: E501
@@ -50,8 +50,7 @@ def get_marketdata_from_sensor_attrs(attributes):
     """Convert sensor attributes to market price list."""
     try:
         data = attributes["data"]
-    except (KeyError, TypeError):
-        _LOGGER.error("price sensor attributes invalid")
-        return []
+    except KeyError:
+        raise KeyError("'data' missing in sensor attributes")
 
     return [Marketprice(e) for e in data]
