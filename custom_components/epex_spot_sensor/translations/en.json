@@ -8,6 +8,7 @@
           "earliest_start_time": "Earliest Start Time",
           "latest_end_time": "Latest End Time",
           "duration": "Duration",
+          "duration_entity_id": "Duration Entity",
           "interval_mode": "Interval Mode",
           "price_mode": "Price Mode"
         },
@@ -15,6 +16,7 @@
           "earliest_start_time": "Earliest time to start the appliance.",
           "latest_end_time": "Latest time to end the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.",
           "duration": "Required duration to complete the appliance.",
+          "duration_entity_id": "Optional entity which holds duration. If entity is set, it replaces the static duration.",
           "interval_mode": "Does the appliance need a single contigous interval or can it be splitted into multiple intervals."
         },
         "description": "Create a binary sensor that turns on or off depending on the market price.",
@@ -29,6 +31,7 @@
           "earliest_start_time": "Earliest Start Time",
           "latest_end_time": "Latest End Time",
           "duration": "Duration",
+          "duration_entity_id": "Duration Entity",
           "interval_mode": "Interval Mode",
           "price_mode": "Price Mode"
         },
@@ -36,6 +39,7 @@
           "earliest_start_time": "Earliest time to start the appliance.",
           "latest_end_time": "Latest time to end the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.",
           "duration": "Required duration to complete the appliance.",
+          "duration_entity_id": "Optional entity which holds duration. If entity is set, it replaces the static duration.",
           "interval_mode": "Does the appliance need a single contigous interval or can it be splitted into multiple intervals."
         }
       }
