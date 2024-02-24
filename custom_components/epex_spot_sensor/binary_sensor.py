@@ -13,6 +13,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_ID,
+    ATTR_UNIT_OF_MEASUREMENT,
     CONF_ENTITY_ID,
 )
 from homeassistant.core import HomeAssistant, callback
@@ -41,6 +42,7 @@ from .const import (
     CONF_EARLIEST_START_TIME,
     CONF_LATEST_END_TIME,
     CONF_DURATION,
+    CONF_DURATION_ENTITY_ID,
     CONF_PRICE_MODE,
     CONF_INTERVAL_MODE,
 )
@@ -54,6 +56,21 @@ from .intermittent_interval import (
 from .contiguous_interval import calc_interval_for_contiguous
 
 _LOGGER = logging.getLogger(__name__)
+
+DURATION_UOM_MAP = {
+    "d": "days",
+    "days": "days",
+    "h": "hours",
+    "hours": "hours",
+    "min": "minutes",
+    "minutes": "minutes",
+    "s": "seconds",
+    "sec": "seconds",
+    "seconds": "seconds",
+    "ms": "milliseconds",
+    "msec": "milliseconds",
+    "milliseconds": "milliseconds",
+}
 
 
 async def async_setup_entry(
@@ -99,6 +116,7 @@ async def async_setup_entry(
                 earliest_start_time=config_entry.options[CONF_EARLIEST_START_TIME],
                 latest_end_time=config_entry.options[CONF_LATEST_END_TIME],
                 duration=config_entry.options[CONF_DURATION],
+                duration_entity_id=config_entry.options.get(CONF_DURATION_ENTITY_ID),
                 interval_mode=config_entry.options[CONF_INTERVAL_MODE],
                 price_mode=config_entry.options[CONF_PRICE_MODE],
                 device_info=device_info,
@@ -121,6 +139,7 @@ class BinarySensor(BinarySensorEntity):
         earliest_start_time: time,
         latest_end_time: time,
         duration: timedelta,
+        duration_entity_id: str | None,
         interval_mode: str,
         price_mode: str,
         device_info: DeviceInfo | None = None,
@@ -129,12 +148,14 @@ class BinarySensor(BinarySensorEntity):
         self._attr_unique_id = unique_id
         self._attr_device_info = device_info
         self._attr_name = name
+        self._hass = hass
 
         # configuration options
         self._entity_id = entity_id
         self._earliest_start_time = cv.time(earliest_start_time)
         self._latest_end_time = cv.time(latest_end_time)
-        self._duration = cv.time_period_dict(duration)
+        self._default_duration = cv.time_period_dict(duration)
+        self._duration_entity_id = duration_entity_id
         self._price_mode = price_mode
         self._interval_mode = interval_mode
 
@@ -143,7 +164,7 @@ class BinarySensor(BinarySensorEntity):
         self._cached_marketdata = []
 
         # calculated values
-        self.sensor_value: float | None = None  # TODO: remove
+        self._duration: timedelta = self._default_duration
         self._interval_enabled: bool = False
         self._state: bool | None = None
         self._intervals: list | None = None
@@ -165,6 +186,8 @@ class BinarySensor(BinarySensorEntity):
                 _LOGGER.warning(f"Can't get attributes of {self._entity_id}")
                 return
 
+            self._calculate_duration()
+
             self._update_state()
 
         @callback
@@ -175,9 +198,12 @@ class BinarySensor(BinarySensorEntity):
             _on_price_sensor_state_update()
             self.async_write_ha_state()
 
+        entities_to_track = [entity_id]
+        if duration_entity_id is not None:
+            entities_to_track.append(duration_entity_id)
         self.async_on_remove(
             async_track_state_change_event(
-                hass, [entity_id], async_price_sensor_state_listener
+                hass, entities_to_track, async_price_sensor_state_listener
             )
         )
 
@@ -373,3 +399,25 @@ class BinarySensor(BinarySensorEntity):
         self._cached_marketdata = marketdata
 
         return marketdata
+
+    def _calculate_duration(self):
+        self._duration = self._default_duration
+
+        if self._duration_entity_id is None:
+            return
+
+        duration_entity_state = self._hass.states.get(self._duration_entity_id)
+        if duration_entity_state is None:
+            return
+
+        uom = duration_entity_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        if uom not in DURATION_UOM_MAP:
+            _LOGGER.error(
+                f'Invalid unit of measurement "{uom}" for duration entity {self._duration_entity_id}.\n'  # noqa
+                "Valid unit of measurements: d, h, min, s, ms"
+            )
+            return
+
+        self._duration = cv.time_period_dict(
+            {DURATION_UOM_MAP[uom]: float(duration_entity_state.state)}
+        )

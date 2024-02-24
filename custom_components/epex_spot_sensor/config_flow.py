@@ -6,6 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 
+from homeassistant.components.input_number import DOMAIN as INPUT_NUMBER_DOMAIN
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
 from homeassistant.helpers import selector
@@ -22,6 +23,7 @@ from .const import (
     CONF_INTERVAL_MODE,
     CONF_PRICE_MODE,
     CONF_DURATION,
+    CONF_DURATION_ENTITY_ID,
     DOMAIN,
 )
 
@@ -31,6 +33,9 @@ OPTIONS_SCHEMA = vol.Schema(
         vol.Required(CONF_EARLIEST_START_TIME): selector.TimeSelector(),
         vol.Required(CONF_LATEST_END_TIME): selector.TimeSelector(),
         vol.Required(CONF_DURATION, default={"hours": 1}): selector.DurationSelector(),
+        vol.Optional(CONF_DURATION_ENTITY_ID): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=INPUT_NUMBER_DOMAIN)
+        ),
         vol.Required(
             CONF_PRICE_MODE, default=PriceModes.CHEAPEST
         ): selector.SelectSelector(
