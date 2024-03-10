@@ -43,6 +43,7 @@ from .const import (
     CONF_LATEST_END_TIME,
     CONF_DURATION,
     CONF_DURATION_ENTITY_ID,
+    CONF_INTERVAL_START_TIME,
     CONF_PRICE_MODE,
     CONF_INTERVAL_MODE,
 )
@@ -165,53 +166,33 @@ class BinarySensor(BinarySensorEntity):
 
         # calculated values
         self._duration: timedelta = self._default_duration
+        self._interval_start_time = None
         self._interval_enabled: bool = False
         self._state: bool | None = None
         self._intervals: list | None = None
 
-        def _on_price_sensor_state_update() -> None:
-            """Handle sensor state changes."""
-
-            # set to unavailable by default
-            self._sensor_attributes = None
-            self._state = None
-
-            if (new_state := hass.states.get(self._entity_id)) is None:
-                # _LOGGER.warning(f"Can't get states of {self._entity_id}")
-                return
-
-            try:
-                self._sensor_attributes = new_state.attributes
-            except (ValueError, TypeError):
-                _LOGGER.warning(f"Can't get attributes of {self._entity_id}")
-                return
-
-            self._calculate_duration()
-
-            self._update_state()
-
         @callback
-        def async_price_sensor_state_listener(
+        def async_update_state(
             event: EventType[EventStateChangedData],
         ) -> None:
-            """Handle sensor state changes."""
-            _on_price_sensor_state_update()
-            self.async_write_ha_state()
+            """Handle price or duration sensor state changes."""
+            self._update_state()
 
         entities_to_track = [entity_id]
         if duration_entity_id is not None:
             entities_to_track.append(duration_entity_id)
         self.async_on_remove(
-            async_track_state_change_event(
-                hass, entities_to_track, async_price_sensor_state_listener
-            )
+            async_track_state_change_event(hass, entities_to_track, async_update_state)
         )
 
         # check every minute for new states
         self.async_on_remove(
-            async_track_time_change(hass, async_price_sensor_state_listener, second=0)
+            async_track_time_change(hass, async_update_state, second=0)
         )
-        _on_price_sensor_state_update()
+
+    async def async_added_to_hass(self) -> None:
+        """manually trigger first update"""
+        self._update_state()
 
     @property
     def is_available(self) -> bool | None:
@@ -231,6 +212,7 @@ class BinarySensor(BinarySensorEntity):
             CONF_EARLIEST_START_TIME: self._earliest_start_time,
             CONF_LATEST_END_TIME: self._latest_end_time,
             CONF_DURATION: str(self._duration),
+            CONF_INTERVAL_START_TIME: self._interval_start_time,
             CONF_PRICE_MODE: self._price_mode,
             CONF_INTERVAL_MODE: self._interval_mode,
             ATTR_INTERVAL_ENABLED: self._interval_enabled,
@@ -239,6 +221,21 @@ class BinarySensor(BinarySensorEntity):
 
     @callback
     def _update_state(self) -> None:
+        # set to unavailable by default
+        self._sensor_attributes = None
+        self._state = None
+
+        # get price sensor attributes first
+        if (new_state := self._hass.states.get(self._entity_id)) is None:
+            # _LOGGER.warning(f"Can't get states of {self._entity_id}")
+            return
+
+        try:
+            self._sensor_attributes = new_state.attributes
+        except (ValueError, TypeError):
+            _LOGGER.warning(f"Can't get attributes of {self._entity_id}")
+            return
+
         now = dt_util.now()
 
         # earliest_start always refers to today
@@ -262,13 +259,23 @@ class BinarySensor(BinarySensorEntity):
                 latest_end += timedelta(days=1)
 
         self._interval_enabled = earliest_start <= now <= latest_end
+        self._interval_start_time = earliest_start
+
+        # calculate the actual duration (in case a duration entity is configured)
+        self._calculate_duration()
 
         if self._interval_mode == IntervalModes.INTERMITTENT.value:
-            self._update_state_for_intermittent(earliest_start, latest_end, now)
+            self._update_state_for_intermittent(
+                self._interval_start_time, latest_end, now
+            )
         elif self._interval_mode == IntervalModes.CONTIGUOUS.value:
-            self._update_state_for_contigous(earliest_start, latest_end, now)
+            self._update_state_for_contiguous(
+                self._interval_start_time, latest_end, now
+            )
         else:
             _LOGGER.error(f"invalid interval mode: {self._interval_mode}")
+
+        self.async_write_ha_state()
 
     def _update_state_for_intermittent(
         self, earliest_start: time, latest_end: time, now: datetime
@@ -319,7 +326,7 @@ class BinarySensor(BinarySensorEntity):
             for e in sorted(intervals, key=lambda e: e.start_time)
         ]
 
-    def _update_state_for_contigous(
+    def _update_state_for_contiguous(
         self, earliest_start: time, latest_end: time, now: datetime
     ):
         marketdata = self._get_marketdata()
@@ -421,3 +428,11 @@ class BinarySensor(BinarySensorEntity):
         self._duration = cv.time_period_dict(
             {DURATION_UOM_MAP[uom]: float(duration_entity_state.state)}
         )
+
+        # set interval start time to duration entity last_changed
+        # if duration entity is changed within interval
+        if (
+            self._interval_enabled
+            and duration_entity_state.last_changed > self._interval_start_time
+        ):
+            self._interval_start_time = duration_entity_state.last_changed

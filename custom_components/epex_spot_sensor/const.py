@@ -7,6 +7,7 @@ CONF_EARLIEST_START_TIME = "earliest_start_time"
 CONF_LATEST_END_TIME = "latest_end_time"
 CONF_DURATION = "duration"
 CONF_DURATION_ENTITY_ID = "duration_entity_id"
+CONF_INTERVAL_START_TIME = "interval_start_time"
 
 CONF_INTERVAL_MODE = "interval_mode"
 

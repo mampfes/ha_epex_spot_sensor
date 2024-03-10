@@ -39,3 +39,52 @@ In case you would like to install manually:
    [![Open your Home Assistant instance and start setting up a new helpers.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=epex_spot_sensor)
 
    If the button doesn't work: Open `Settings` > `Devices & services` > `Helpers` > `Create Helper` and select `EPEX Spot Sensor`.
+
+## Configuration Options
+
+1. Earliest Start Time  
+   Earliest time to start the appliance.
+
+2. Latest End Time  
+   Latest time to end the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.
+
+3. Duration  
+   Required duration to complete the appliance.
+
+4. Remaining Duration Entity  
+   Optional entity which indicates the remaining duration. If entity is set, it replaces the static duration. If the state of the `Remaining Duration Entity` changes between `Earliest Start Time` and `Latest End Time`, the configured `Earliest Start Time` will be ignore and the latest change time of the `Remaining Duration Entity` will the used instead.
+
+5. Price Mode  
+   Selects whether the sensor shall react on the cheapest or the most expensive prices between `Earliest Start Time` and `Latest End Time`.
+
+6. Interval Mode  
+   Selects whether the specified duration shall be completed in a single, contiguous interval or can be split into multiple, not contiguous intervals (`intermittend`).
+
+## Sensor Attributes
+
+1. Earliest Start Time  
+   Reflects the configured `Earliest Start Time`.
+
+2. Latest End Time  
+   Reflects the configured `Latest End Time`.
+
+3. Duration  
+   Reflects the used value for duration, which is either the configured duration if the `Remaining Duration Entity` is not set; or the state of the `Remaining Duration Entity`.
+
+4. Remaining Duration Entity  
+   Optional entity which indicates the remaining duration. If entity is set, it replaces the static duration.
+
+5. Interval Start Time
+   Reflects the actual start time of the interval, which is either the configured `Earliest Start Time` or the latest change time of the `Remaining Duration Entity` if the state of the entity changed between `Earliest Start Time` and `Latest End Time`.
+
+6. Price Mode  
+   Reflects the configured `Price Mode`.
+
+7. Price Mode  
+   Reflects the configured `Interval Mode`.
+
+8. Enabled  
+   Set to `true` if current time is between `Earliest Start Time` and `Latest End Time`.
+
+9. Data  
+   List of calculated intervals to switch sensor on, consisting of `start_time`, `end_time` and `rank` (for Interval Mode intermittend only).
