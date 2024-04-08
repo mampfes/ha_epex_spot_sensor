@@ -11,16 +11,16 @@ class Marketprice:
     def __init__(self, entry):
         self._start_time = cv.datetime(entry["start_time"])
         self._end_time = cv.datetime(entry["end_time"])
-        if x := entry.get("price_eur_per_mwh") is not None:
+        if (x := entry.get("price_eur_per_mwh")) is not None:
             self._price = x
             self._price_uom = "EUR/MWh"
-        elif x := entry.get("price_gbp_per_mwh") is not None:
+        elif (x := entry.get("price_gbp_per_mwh")) is not None:
             self._price = x
             self._price_uom = "GBP/MWh"
-        elif x := entry.get("price_ct_per_kwh") is not None:
+        elif (x := entry.get("price_ct_per_kwh")) is not None:
             self._price = x
             self._price_uom = "ct/kWh"
-        elif x := entry.get("price_pence_per_kwh") is not None:
+        elif (x := entry.get("price_pence_per_kwh")) is not None:
             self._price = x
             self._price_uom = "pence/kWh"
         else:
