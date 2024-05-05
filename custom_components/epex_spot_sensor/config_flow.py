@@ -34,7 +34,7 @@ OPTIONS_SCHEMA = vol.Schema(
         vol.Required(CONF_LATEST_END_TIME): selector.TimeSelector(),
         vol.Required(CONF_DURATION, default={"hours": 1}): selector.DurationSelector(),
         vol.Optional(CONF_DURATION_ENTITY_ID): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain=INPUT_NUMBER_DOMAIN)
+            selector.EntitySelectorConfig(domain=[INPUT_NUMBER_DOMAIN, SENSOR_DOMAIN])
         ),
         vol.Required(
             CONF_PRICE_MODE, default=PriceModes.CHEAPEST
