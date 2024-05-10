@@ -16,7 +16,7 @@ from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     CONF_ENTITY_ID,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback, Event
 from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
@@ -29,7 +29,6 @@ from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
 )
-from homeassistant.helpers.typing import EventType
 
 from .const import (
     ATTR_DATA,
@@ -173,7 +172,7 @@ class BinarySensor(BinarySensorEntity):
 
         @callback
         def async_update_state(
-            event: EventType[EventStateChangedData],
+            event: Event[EventStateChangedData],
         ) -> None:
             """Handle price or duration sensor state changes."""
             self._update_state()
