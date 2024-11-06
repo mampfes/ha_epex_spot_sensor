@@ -23,6 +23,9 @@ class Marketprice:
         elif (x := entry.get("price_pence_per_kwh")) is not None:
             self._price = x
             self._price_uom = "pence/kWh"
+        elif (x := entry.get("price_per_kwh")) is not None:
+            self._price = x
+            self._price_uom = "€/£/kWh"
         else:
             raise KeyError("No valid price field found.")
 
