@@ -23,6 +23,9 @@ def _calc_interval_price(marketdata, start_time: datetime, duration: timedelta):
     while start_time < stop_time:
         mp = _find_market_price(marketdata, start_time)
 
+        if mp is None:
+            return None
+
         if mp.end_time > stop_time:
             active_duration_in_this_segment = stop_time - start_time
         else:
