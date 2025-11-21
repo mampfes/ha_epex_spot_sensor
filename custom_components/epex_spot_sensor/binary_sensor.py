@@ -29,7 +29,7 @@ from .const import (
     ATTR_END_TIME,
     ATTR_INTERVAL_ENABLED,
     ATTR_MEAN_PRICE_PER_KWH,
-    ATTR_NET_PRICE_PER_KWH,
+    ATTR_PRICE_PER_KWH,
     ATTR_RANK,
     ATTR_START_TIME,
     CONF_DURATION,
@@ -313,7 +313,7 @@ class BinarySensor(BinarySensorEntity):
                 ATTR_START_TIME: dt_util.as_local(e.start_time).isoformat(),
                 ATTR_END_TIME: dt_util.as_local(e.end_time).isoformat(),
                 ATTR_RANK: e.rank,
-                ATTR_NET_PRICE_PER_KWH: e.price,
+                ATTR_PRICE_PER_KWH: e.price,
             }
             for e in sorted(intervals, key=lambda e: e.start_time)
         ]
