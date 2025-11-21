@@ -332,22 +332,18 @@ class BinarySensor(BinarySensorEntity):
         )
 
         if result is None:
-            # no interval found, probably because data for next day is missing
-            if now < earliest_start:
-                # we are before the start time, o we just say sensor-state=off instead of unavailable # noqa: E501
-                self._state = False
-                self._intervals = []
-            return
-
-        self._state = result["start"] <= now < result["end"]
-
-        self._intervals = [
-            {
-                ATTR_START_TIME: dt_util.as_local(result["start"]).isoformat(),
-                ATTR_END_TIME: dt_util.as_local(result["end"]).isoformat(),
-                ATTR_NET_PRICE_PER_KWH: result["interval_price"],
-            }
-        ]
+            # no interval found, probably because data for next day is missing, or last day's data are gone
+            self._state = False
+            self._intervals = []
+        else:
+            self._state = result["start"] <= now < result["end"]
+            self._intervals = [
+                {
+                    ATTR_START_TIME: dt_util.as_local(result["start"]).isoformat(),
+                    ATTR_END_TIME: dt_util.as_local(result["end"]).isoformat(),
+                    # "interval_price": result["interval_price"],
+                }
+            ]
 
         # try to calculate intervals for next day also
         earliest_start += timedelta(days=1)
@@ -364,6 +360,11 @@ class BinarySensor(BinarySensorEntity):
             )
 
             if result is None:
+                if len(self._intervals) == 0:
+                    # no interval found up until today, and none for tomorrow
+                    # we are probably before next interval start, have not all data for yesterday anymore
+                    # and tomorrows data are not available yet
+                    self._state = False
                 return
 
             self._intervals.append(
