@@ -1,4 +1,5 @@
 """Constants for the EPEX Spot Sensor integration."""
+
 from enum import Enum
 
 DOMAIN = "epex_spot_sensor"
@@ -34,3 +35,5 @@ ATTR_START_TIME = "start_time"
 ATTR_END_TIME = "end_time"
 ATTR_RANK = "rank"
 ATTR_DATA = "data"
+ATTR_NET_PRICE_PER_KWH = "net_price_per_kwh"
+ATTR_MEAN_PRICE_PER_KWH = "mean_price_per_kwh"
