@@ -1,22 +1,15 @@
 """Support for monitoring if a sensor value is below/above a threshold."""
+
 from __future__ import annotations
 
+from datetime import datetime, time, timedelta
 import logging
 from typing import Any
 
-from datetime import time, timedelta, datetime
-
-import homeassistant.util.dt as dt_util
-from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
-)
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    ATTR_ENTITY_ID,
-    ATTR_UNIT_OF_MEASUREMENT,
-    CONF_ENTITY_ID,
-)
-from homeassistant.core import HomeAssistant, callback, Event
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_UNIT_OF_MEASUREMENT, CONF_ENTITY_ID
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
@@ -29,31 +22,29 @@ from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
 )
+import homeassistant.util.dt as dt_util
 
 from .const import (
     ATTR_DATA,
-    ATTR_RANK,
-    ATTR_INTERVAL_ENABLED,
-    ATTR_START_TIME,
     ATTR_END_TIME,
-    PriceModes,
-    IntervalModes,
-    CONF_EARLIEST_START_TIME,
-    CONF_LATEST_END_TIME,
+    ATTR_INTERVAL_ENABLED,
+    ATTR_MEAN_PRICE_PER_KWH,
+    ATTR_NET_PRICE_PER_KWH,
+    ATTR_RANK,
+    ATTR_START_TIME,
     CONF_DURATION,
     CONF_DURATION_ENTITY_ID,
-    CONF_INTERVAL_START_TIME,
-    CONF_PRICE_MODE,
+    CONF_EARLIEST_START_TIME,
     CONF_INTERVAL_MODE,
-)
-from .util import (
-    get_marketdata_from_sensor_attrs,
-)
-from .intermittent_interval import (
-    calc_intervals_for_intermittent,
-    is_now_in_intervals,
+    CONF_INTERVAL_START_TIME,
+    CONF_LATEST_END_TIME,
+    CONF_PRICE_MODE,
+    IntervalModes,
+    PriceModes,
 )
 from .contiguous_interval import calc_interval_for_contiguous
+from .intermittent_interval import calc_intervals_for_intermittent, is_now_in_intervals
+from .util import get_marketdata_from_sensor_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -215,6 +206,7 @@ class BinarySensor(BinarySensorEntity):
             CONF_PRICE_MODE: self._price_mode,
             CONF_INTERVAL_MODE: self._interval_mode,
             ATTR_INTERVAL_ENABLED: self._interval_enabled,
+            ATTR_MEAN_PRICE_PER_KWH: self._price_mode,
             ATTR_DATA: self._intervals,
         }
 
@@ -321,6 +313,7 @@ class BinarySensor(BinarySensorEntity):
                 ATTR_START_TIME: dt_util.as_local(e.start_time).isoformat(),
                 ATTR_END_TIME: dt_util.as_local(e.end_time).isoformat(),
                 ATTR_RANK: e.rank,
+                ATTR_NET_PRICE_PER_KWH: e.price,
             }
             for e in sorted(intervals, key=lambda e: e.start_time)
         ]
