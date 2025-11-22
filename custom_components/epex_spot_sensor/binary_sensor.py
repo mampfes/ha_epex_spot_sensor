@@ -218,7 +218,7 @@ class BinarySensor(BinarySensorEntity):
 
         # get price sensor attributes first
         if (new_state := self._hass.states.get(self._entity_id)) is None:
-            # _LOGGER.warning(f"Can't get states of {self._entity_id}")
+            _LOGGER.warning(f"Can't get states of {self._entity_id}")
             return
 
         try:
