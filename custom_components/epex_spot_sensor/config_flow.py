@@ -1,4 +1,5 @@
 """Config flow for EPEX Spot Sensor component."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -30,6 +31,9 @@ from .const import (
 
 OPTIONS_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_ENTITY_ID): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=SENSOR_DOMAIN)
+        ),
         vol.Required(CONF_EARLIEST_START_TIME): selector.TimeSelector(),
         vol.Required(CONF_LATEST_END_TIME): selector.TimeSelector(),
         vol.Required(CONF_DURATION, default={"hours": 1}): selector.DurationSelector(),
@@ -67,9 +71,6 @@ OPTIONS_SCHEMA = vol.Schema(
 CONFIG_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): selector.TextSelector(),
-        vol.Required(CONF_ENTITY_ID): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain=SENSOR_DOMAIN)
-        ),
     }
 ).extend(OPTIONS_SCHEMA.schema)
 

@@ -28,6 +28,7 @@
     "step": {
       "init": {
         "data": {
+          "entity_id": "Price Input Sensor",
           "earliest_start_time": "Earliest Start Time",
           "latest_end_time": "Latest End Time",
           "duration": "Duration",
