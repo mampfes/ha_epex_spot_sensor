@@ -1,7 +1,12 @@
 {
   "domain": "epex_spot_sensor",
   "name": "EPEX Spot Sensor",
-  "codeowners": ["@mampfes"],
+  "codeowners": [
+    "@mampfes"
+  ],
+  "after_dependencies": [
+    "epex_spot"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/mampfes/ha_epex_spot_sensor",
   "integration_type": "helper",
