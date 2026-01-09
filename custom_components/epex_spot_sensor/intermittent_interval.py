@@ -78,8 +78,8 @@ def calc_intervals_for_intermittent(
 
         price = (
             mp.price
-            * active_duration_in_this_segment.total_seconds()
-            / SECONDS_PER_HOUR
+#            * active_duration_in_this_segment.total_seconds()
+#            / SECONDS_PER_HOUR
         )
 
         intervals.append(
