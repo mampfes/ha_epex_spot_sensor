@@ -4,13 +4,32 @@ from homeassistant.helpers import (
     config_validation as cv,
 )
 
+from .const import (
+    ATTR_DATA,
+    ATTR_END_TIME,
+    ATTR_INTERVAL_ENABLED,
+    ATTR_MEAN_PRICE_PER_KWH,
+    ATTR_PRICE_PER_KWH,
+    ATTR_RANK,
+    ATTR_START_TIME,
+    CONF_DURATION,
+    CONF_DURATION_ENTITY_ID,
+    CONF_EARLIEST_START_TIME,
+    CONF_INTERVAL_MODE,
+    CONF_INTERVAL_START_TIME,
+    CONF_LATEST_END_TIME,
+    CONF_PRICE_MODE,
+    IntervalModes,
+    PriceModes,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
 class Marketprice:
     def __init__(self, entry):
-        self._start_time = cv.datetime(entry["start_time"])
-        self._end_time = cv.datetime(entry["end_time"])
+        self._start_time = cv.datetime(entry[ATTR_START_TIME])
+        self._end_time = cv.datetime(entry[ATTR_END_TIME])
         if (x := entry.get("price_eur_per_mwh")) is not None:
             self._price = x
             self._price_uom = "EUR/MWh"
