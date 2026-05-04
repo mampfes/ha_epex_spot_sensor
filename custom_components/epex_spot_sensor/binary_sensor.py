@@ -383,22 +383,14 @@ class BinarySensor(BinarySensorEntity):
             )
             return []
 
-        # now merge it with the cached info
-        marketdata = [*marketdata, *self._cached_marketdata]
-
-        # remove outdated entries (exact time doesn't matter)
+        # keep only last 24h
         start_time = dt_util.now() - timedelta(days=1)
-        marketdata = filter(lambda e: e.start_time >= start_time, marketdata)
+        marketdata = [e for e in marketdata if e.start_time >= start_time]
 
-        # eliminate duplicates
+        # remove duplicates
         dummy = {e.start_time: e for e in marketdata}
+        return sorted(dummy.values(), key=lambda e: e.start_time)
 
-        # sort by start_time again
-        marketdata = sorted(dummy.values(), key=lambda e: e.start_time)
-
-        self._cached_marketdata = marketdata
-
-        return marketdata
 
     def _calculate_duration(self):
         self._duration = self._default_duration
