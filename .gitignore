@@ -4,3 +4,5 @@ __pycache__
 .vscode/
 .mypy_cache/
 venv/
+.venv
+node_modules/

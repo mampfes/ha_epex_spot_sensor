@@ -6,6 +6,13 @@ from homeassistant.helpers import (
 
 _LOGGER = logging.getLogger(__name__)
 
+MISSING_DATA_ERROR = (
+    "sensor attributes must contain a 'data' list with start_time, end_time, "
+    "and price_per_kwh entries; select an EPEX Spot Market Price or Total Price "
+    "sensor, for example sensor.epex_spot_data_market_price or "
+    "sensor.epex_spot_data_total_price"
+)
+
 
 class Marketprice:
     def __init__(self, entry):
@@ -54,6 +61,6 @@ def get_marketdata_from_sensor_attrs(attributes):
     try:
         data = attributes["data"]
     except KeyError:
-        raise KeyError("'data' missing in sensor attributes")
+        raise KeyError(MISSING_DATA_ERROR)
 
     return [Marketprice(e) for e in data]

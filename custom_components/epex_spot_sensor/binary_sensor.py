@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta
 import logging
+from datetime import datetime, time, timedelta
 from typing import Any
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
@@ -15,10 +15,9 @@ from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
 )
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import (
-    EventStateChangedData,
     async_track_state_change_event,
     async_track_time_change,
 )
@@ -32,18 +31,27 @@ from .const import (
     ATTR_PRICE_PER_KWH,
     ATTR_RANK,
     ATTR_START_TIME,
+    ATTR_VISUALIZATION_DATA,
     CONF_DURATION,
     CONF_DURATION_ENTITY_ID,
+    CONF_DURATION_MODE,
     CONF_EARLIEST_START_TIME,
     CONF_INTERVAL_MODE,
     CONF_INTERVAL_START_TIME,
     CONF_LATEST_END_TIME,
+    CONF_MIN_DURATION,
     CONF_PRICE_MODE,
+    CONF_PRICE_TOLERANCE,
+    DEFAULT_PRICE_TOLERANCE,
+    DurationModes,
     IntervalModes,
     PriceModes,
 )
 from .contiguous_interval import calc_interval_for_contiguous
-from .intermittent_interval import calc_intervals_for_intermittent, is_now_in_intervals
+from .intermittent_interval import (
+    calc_intervals_for_intermittent,
+    is_now_in_intervals,
+)
 from .util import get_marketdata_from_sensor_attrs
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,6 +118,13 @@ async def async_setup_entry(
                 duration_entity_id=config_entry.options.get(CONF_DURATION_ENTITY_ID),
                 interval_mode=config_entry.options[CONF_INTERVAL_MODE],
                 price_mode=config_entry.options[CONF_PRICE_MODE],
+                price_tolerance=config_entry.options.get(
+                    CONF_PRICE_TOLERANCE, DEFAULT_PRICE_TOLERANCE
+                ),
+                duration_mode=config_entry.options.get(
+                    CONF_DURATION_MODE, DurationModes.EXACT
+                ),
+                min_duration=config_entry.options.get(CONF_MIN_DURATION),
                 device_info=device_info,
             )
         ]
@@ -133,6 +148,9 @@ class BinarySensor(BinarySensorEntity):
         duration_entity_id: str | None,
         interval_mode: str,
         price_mode: str,
+        price_tolerance: float,
+        duration_mode: str,
+        min_duration: timedelta | None,
         device_info: DeviceInfo | None = None,
     ) -> None:
         """Initialize the EPEX Spot binary sensor."""
@@ -149,6 +167,9 @@ class BinarySensor(BinarySensorEntity):
         self._duration_entity_id = duration_entity_id
         self._price_mode = price_mode
         self._interval_mode = interval_mode
+        self._price_tolerance = price_tolerance
+        self._duration_mode = duration_mode
+        self._min_duration = min_duration
 
         # price sensor values
         self._sensor_attributes = None
@@ -160,10 +181,11 @@ class BinarySensor(BinarySensorEntity):
         self._interval_enabled: bool = False
         self._state: bool | None = None
         self._intervals: list | None = None
+        self._visualization_data: dict[str, Any] = {}
 
         @callback
         def async_update_state(
-            event: Event[EventStateChangedData],
+            event: Event,
         ) -> None:
             """Handle price or duration sensor state changes."""
             self._update_state()
@@ -208,6 +230,7 @@ class BinarySensor(BinarySensorEntity):
             ATTR_INTERVAL_ENABLED: self._interval_enabled,
             ATTR_MEAN_PRICE_PER_KWH: self._price_mode,
             ATTR_DATA: self._intervals,
+            ATTR_VISUALIZATION_DATA: self._visualization_data or {},
         }
 
     @callback
@@ -217,6 +240,7 @@ class BinarySensor(BinarySensorEntity):
         self._state = None
 
         # get price sensor attributes first
+        self._visualization_data = {}
         if (new_state := self._hass.states.get(self._entity_id)) is None:
             _LOGGER.warning(f"Can't get states of {self._entity_id}")
             return
@@ -251,6 +275,8 @@ class BinarySensor(BinarySensorEntity):
 
         self._interval_enabled = earliest_start <= now <= latest_end
         self._interval_start_time = earliest_start
+        self._interval_enabled = earliest_start <= now <= latest_end
+        self._interval_start_time = earliest_start
 
         # calculate the actual duration (in case a duration entity is configured)
         self._calculate_duration()
@@ -268,6 +294,45 @@ class BinarySensor(BinarySensorEntity):
 
         self.async_write_ha_state()
 
+    def _build_visualization_data(self, marketdata, intervals):
+        marketdata_in_window = [
+            entry
+            for entry in marketdata
+            if entry.start_time >= self._interval_start_time
+        ]
+
+        if not marketdata_in_window:
+            return {
+                "price_unit": None,
+                "window_start": dt_util.as_local(self._interval_start_time).isoformat(),
+                "window_end": None,
+                "market_prices": [],
+                "selected_intervals": intervals,
+                "price_range": {"min": None, "max": None},
+            }
+
+        prices = [entry.price for entry in marketdata_in_window]
+        min_price = min(prices)
+        max_price = max(prices)
+
+        return {
+            "price_unit": marketdata_in_window[0].price_uom,
+            "window_start": dt_util.as_local(self._interval_start_time).isoformat(),
+            "window_end": dt_util.as_local(
+                marketdata_in_window[-1].end_time
+            ).isoformat(),
+            "market_prices": [
+                {
+                    ATTR_START_TIME: dt_util.as_local(entry.start_time).isoformat(),
+                    ATTR_END_TIME: dt_util.as_local(entry.end_time).isoformat(),
+                    "price": entry.price,
+                }
+                for entry in marketdata_in_window
+            ],
+            "selected_intervals": intervals,
+            "price_range": {"min": min_price, "max": max_price},
+        }
+
     def _update_state_for_intermittent(
         self, earliest_start: time, latest_end: time, now: datetime
     ):
@@ -279,6 +344,10 @@ class BinarySensor(BinarySensorEntity):
             latest_end=latest_end,
             duration=self._duration,
             most_expensive=self._price_mode == PriceModes.MOST_EXPENSIVE.value,
+            price_tolerance_percent=self._price_tolerance,
+            min_duration=self._min_duration
+            if self._duration_mode == DurationModes.FLEXIBLE.value
+            else None,
         )
 
         if intervals is None:
@@ -303,6 +372,10 @@ class BinarySensor(BinarySensorEntity):
                 latest_end=latest_end,
                 duration=self._duration,
                 most_expensive=self._price_mode == PriceModes.MOST_EXPENSIVE.value,
+                price_tolerance_percent=self._price_tolerance,
+                min_duration=self._min_duration
+                if self._duration_mode == DurationModes.FLEXIBLE.value
+                else None,
             )
 
             if intervals2 is not None:
@@ -317,6 +390,9 @@ class BinarySensor(BinarySensorEntity):
             }
             for e in sorted(intervals, key=lambda e: e.start_time)
         ]
+        self._visualization_data = self._build_visualization_data(
+            marketdata, self._intervals
+        )
 
     def _update_state_for_contiguous(
         self, earliest_start: time, latest_end: time, now: datetime
@@ -329,10 +405,15 @@ class BinarySensor(BinarySensorEntity):
             latest_end=latest_end,
             duration=self._duration,
             most_expensive=self._price_mode == PriceModes.MOST_EXPENSIVE.value,
+            price_tolerance_percent=self._price_tolerance,
+            min_duration=self._min_duration
+            if self._duration_mode == DurationModes.FLEXIBLE.value
+            else None,
         )
 
         if result is None:
-            # no interval found, probably because data for next day is missing, or last day's data are gone
+            # No interval found: next-day data may be missing or previous-day
+            # data may no longer be available.
             self._state = False
             self._intervals = []
         else:
@@ -357,12 +438,17 @@ class BinarySensor(BinarySensorEntity):
                 latest_end=latest_end,
                 duration=self._duration,
                 most_expensive=self._price_mode == PriceModes.MOST_EXPENSIVE.value,
+                price_tolerance_percent=self._price_tolerance,
+                min_duration=self._min_duration
+                if self._duration_mode == DurationModes.FLEXIBLE.value
+                else None,
             )
 
             if result is None:
                 if len(self._intervals) == 0:
                     # no interval found up until today, and none for tomorrow
-                    # we are probably before next interval start, have not all data for yesterday anymore
+                    # we are likely before the next interval start and no
+                    # longer have all previous-day data
                     # and tomorrows data are not available yet
                     self._state = False
                 return
@@ -373,6 +459,10 @@ class BinarySensor(BinarySensorEntity):
                     ATTR_END_TIME: dt_util.as_local(result["end"]).isoformat(),
                 }
             )
+
+        self._visualization_data = self._build_visualization_data(
+            marketdata, self._intervals
+        )
 
     def _get_marketdata(self):
         try:
@@ -402,9 +492,14 @@ class BinarySensor(BinarySensorEntity):
 
     def _calculate_duration(self):
         self._duration = self._default_duration
+        self._min_duration = None  # Reset flexible settings
 
         if self._duration_entity_id is None:
             return
+
+        # When entity is active, force exact mode
+        self._duration_mode = DurationModes.EXACT.value
+        self._min_duration = None
 
         duration_entity_state = self._hass.states.get(self._duration_entity_id)
         if duration_entity_state is None:

@@ -7,17 +7,23 @@
           "entity_id": "Price Input Sensor",
           "earliest_start_time": "Earliest Start Time",
           "latest_end_time": "Latest End Time",
+          "duration_mode": "Duration Mode",
           "duration": "Duration",
+          "min_duration": "Minimum Duration",
           "duration_entity_id": "Remaining Duration Entity",
           "interval_mode": "Interval Mode",
-          "price_mode": "Price Mode"
+          "price_mode": "Price Mode",
+          "price_tolerance": "Price Tolerance (%)"
         },
         "data_description": {
           "earliest_start_time": "Earliest time to start the appliance.",
           "latest_end_time": "Latest time to end the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.",
-          "duration": "Required duration to complete the appliance.",
+          "duration_mode": "Select whether to use exact duration or flexible duration with minimum/maximum bounds.",
+          "duration": "Required duration to complete the appliance. When using flexible mode, this is the maximum duration.",
+          "min_duration": "Minimum duration to run when using flexible mode. Must be less than maximum duration.",
           "duration_entity_id": "Optional entity which indicates the remaining duration. If entity is set, it replaces the static duration.",
-          "interval_mode": "Does the appliance need a single contiguous interval or can it be splitted into multiple intervals."
+          "interval_mode": "Does the appliance need a single contiguous interval or can it be splitted into multiple intervals.",
+          "price_tolerance": "Allow time slots within ±X% of the cheapest/most expensive price. 0% = exact matching (default)."
         },
         "description": "Create a binary sensor that turns on or off depending on the market price.",
         "title": "Add EPEX Spot Binary Sensor"
@@ -31,17 +37,23 @@
           "entity_id": "Price Input Sensor",
           "earliest_start_time": "Earliest Start Time",
           "latest_end_time": "Latest End Time",
+          "duration_mode": "Duration Mode",
           "duration": "Duration",
+          "min_duration": "Minimum Duration",
           "duration_entity_id": "Remaining Duration Entity",
           "interval_mode": "Interval Mode",
-          "price_mode": "Price Mode"
+          "price_mode": "Price Mode",
+          "price_tolerance": "Price Tolerance (%)"
         },
         "data_description": {
           "earliest_start_time": "Earliest time to start the appliance.",
-          "latest_end_time": "Latest time to end the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.",
-          "duration": "Required duration to complete the appliance.",
+          "latest_end_time": "Latest time to start the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.",
+          "duration_mode": "Select whether to use exact duration or flexible duration with minimum/maximum bounds.",
+          "duration": "Required duration to complete the appliance. When using flexible mode, this is the maximum duration.",
+          "min_duration": "Minimum duration to run when using flexible mode. Must be less than maximum duration.",
           "duration_entity_id": "Optional entity which indicates the remaining duration. If entity is set, it replaces the static duration.",
-          "interval_mode": "Does the appliance need a single contiguous interval or can it be splitted into multiple intervals."
+          "interval_mode": "Does the appliance need a single contiguous interval or can it be splitted into multiple intervals.",
+          "price_tolerance": "Allow time slots within ±X% of the cheapest/most expensive price. 0% = exact matching (default)."
         }
       }
     }
@@ -58,6 +70,12 @@
       "options": {
         "contiguous": "Contiguous",
         "intermittent": "Intermittent"
+      }
+    },
+    "duration_mode": {
+      "options": {
+        "exact": "Exact",
+        "flexible": "Flexible"
       }
     }
   }

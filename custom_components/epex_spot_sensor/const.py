@@ -12,6 +12,22 @@ CONF_INTERVAL_START_TIME = "interval_start_time"
 
 CONF_INTERVAL_MODE = "interval_mode"
 
+CONF_PRICE_TOLERANCE = "price_tolerance"
+DEFAULT_PRICE_TOLERANCE = 0.0
+
+CONF_DURATION_MODE = "duration_mode"
+CONF_MIN_DURATION = "min_duration"
+
+
+class DurationModes(Enum):
+    """Duration modes for config validation."""
+
+    EXACT = "exact"
+    FLEXIBLE = "flexible"
+
+
+DEFAULT_DURATION_MODE = DurationModes.EXACT
+
 
 class IntervalModes(Enum):
     """Work modes for config validation."""
@@ -37,3 +53,4 @@ ATTR_RANK = "rank"
 ATTR_DATA = "data"
 ATTR_PRICE_PER_KWH = "price_per_kwh"
 ATTR_MEAN_PRICE_PER_KWH = "mean_price_per_kwh"
+ATTR_VISUALIZATION_DATA = "visualization_data"
