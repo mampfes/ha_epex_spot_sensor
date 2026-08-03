@@ -105,11 +105,17 @@ def _find_extreme_price_interval(
     if interval_start_time is None:
         return None
 
+    duration_seconds = duration.total_seconds()
+
     return {
         "start": interval_start_time,
         "end": interval_start_time + duration,
         "interval_price": interval_price,
-        "price_per_hour": interval_price * SECONDS_PER_HOUR / duration.total_seconds(),
+        "price_per_hour": (
+            interval_price * SECONDS_PER_HOUR / duration_seconds
+            if duration_seconds > 0
+            else 0
+        ),
     }
 
 

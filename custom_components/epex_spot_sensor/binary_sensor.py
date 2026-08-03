@@ -212,6 +212,22 @@ class BinarySensor(BinarySensorEntity):
 
     @callback
     def _update_state(self) -> None:
+        # Always write the state at the end, even if the calculation raises or
+        # returns early. Otherwise an exception (or early return) would leave the
+        # last written state in place, so the sensor would appear "stuck" on its
+        # previous value instead of becoming unavailable/off.
+        try:
+            self._calc_state()
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception(
+                f"Failed to update state of EPEX Spot binary sensor {self._attr_name}"
+            )
+            self._sensor_attributes = None
+            self._state = None
+
+        self.async_write_ha_state()
+
+    def _calc_state(self) -> None:
         # set to unavailable by default
         self._sensor_attributes = None
         self._state = None
@@ -255,6 +271,20 @@ class BinarySensor(BinarySensorEntity):
         # calculate the actual duration (in case a duration entity is configured)
         self._calculate_duration()
 
+        # clamp the duration to the available window: if the requested duration is
+        # longer than the window (latest_end - earliest_start), run for the whole
+        # window instead of turning the sensor off.
+        window = latest_end - self._interval_start_time
+        if self._duration > window:
+            self._duration = window
+
+        # a non-positive duration means there is nothing to schedule, so the sensor
+        # is off (and we avoid a division-by-zero in the interval calculation).
+        if self._duration <= timedelta(0):
+            self._state = False
+            self._intervals = []
+            return
+
         if self._interval_mode == IntervalModes.INTERMITTENT.value:
             self._update_state_for_intermittent(
                 self._interval_start_time, latest_end, now
@@ -265,8 +295,6 @@ class BinarySensor(BinarySensorEntity):
             )
         else:
             _LOGGER.error(f"invalid interval mode: {self._interval_mode}")
-
-        self.async_write_ha_state()
 
     def _update_state_for_intermittent(
         self, earliest_start: time, latest_end: time, now: datetime
