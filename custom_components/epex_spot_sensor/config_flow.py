@@ -20,7 +20,9 @@ from .const import (
     PriceModes,
     IntervalModes,
     CONF_EARLIEST_START_TIME,
+    CONF_EARLIEST_START_TIME_ENTITY_ID,
     CONF_LATEST_END_TIME,
+    CONF_LATEST_END_TIME_ENTITY_ID,
     CONF_INTERVAL_MODE,
     CONF_PRICE_MODE,
     CONF_DURATION,
@@ -35,7 +37,13 @@ OPTIONS_SCHEMA = vol.Schema(
             selector.EntitySelectorConfig(domain=SENSOR_DOMAIN)
         ),
         vol.Required(CONF_EARLIEST_START_TIME): selector.TimeSelector(),
+        vol.Optional(CONF_EARLIEST_START_TIME_ENTITY_ID): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["input_datetime", "time", "sensor"])
+        ),          
         vol.Required(CONF_LATEST_END_TIME): selector.TimeSelector(),
+        vol.Optional(CONF_LATEST_END_TIME_ENTITY_ID): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["input_datetime", "time", "sensor"])
+        ),
         vol.Required(CONF_DURATION, default={"hours": 1}): selector.DurationSelector(),
         vol.Optional(CONF_DURATION_ENTITY_ID): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=[INPUT_NUMBER_DOMAIN, SENSOR_DOMAIN])

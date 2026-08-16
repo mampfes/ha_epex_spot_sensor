@@ -35,9 +35,11 @@ from .const import (
     CONF_DURATION,
     CONF_DURATION_ENTITY_ID,
     CONF_EARLIEST_START_TIME,
+    CONF_EARLIEST_START_TIME_ENTITY_ID,
     CONF_INTERVAL_MODE,
     CONF_INTERVAL_START_TIME,
     CONF_LATEST_END_TIME,
+    CONF_LATEST_END_TIME_ENTITY_ID,
     CONF_PRICE_MODE,
     IntervalModes,
     PriceModes,
@@ -105,7 +107,9 @@ async def async_setup_entry(
                 name=config_entry.title,
                 entity_id=entity_id,
                 earliest_start_time=config_entry.options[CONF_EARLIEST_START_TIME],
+                earliest_start_time_entity_id=config_entry.options.get(CONF_EARLIEST_START_TIME_ENTITY_ID),              
                 latest_end_time=config_entry.options[CONF_LATEST_END_TIME],
+                latest_end_time_entity_id=config_entry.options.get(CONF_LATEST_END_TIME_ENTITY_ID),
                 duration=config_entry.options[CONF_DURATION],
                 duration_entity_id=config_entry.options.get(CONF_DURATION_ENTITY_ID),
                 interval_mode=config_entry.options[CONF_INTERVAL_MODE],
@@ -128,7 +132,9 @@ class BinarySensor(BinarySensorEntity):
         name: str,
         entity_id: str,
         earliest_start_time: time,
+        earliest_start_time_entity_id: str | None,
         latest_end_time: time,
+        latest_end_time_entity_id: str | None,
         duration: timedelta,
         duration_entity_id: str | None,
         interval_mode: str,
@@ -143,8 +149,12 @@ class BinarySensor(BinarySensorEntity):
 
         # configuration options
         self._entity_id = entity_id
+        self._default_earliest_start_time = cv.time(earliest_start_time)
         self._earliest_start_time = cv.time(earliest_start_time)
+        self._earliest_start_time_entity_id = earliest_start_time_entity_id
+        self._default_latest_end_time = cv.time(latest_end_time)
         self._latest_end_time = cv.time(latest_end_time)
+        self._latest_end_time_entity_id = latest_end_time_entity_id
         self._default_duration = cv.time_period_dict(duration)
         self._duration_entity_id = duration_entity_id
         self._price_mode = price_mode
@@ -171,6 +181,10 @@ class BinarySensor(BinarySensorEntity):
         entities_to_track = [entity_id]
         if duration_entity_id is not None:
             entities_to_track.append(duration_entity_id)
+        if earliest_start_time_entity_id is not None:
+            entities_to_track.append(earliest_start_time_entity_id)
+        if latest_end_time_entity_id is not None:
+            entities_to_track.append(latest_end_time_entity_id)
         self.async_on_remove(
             async_track_state_change_event(hass, entities_to_track, async_update_state)
         )
@@ -228,6 +242,10 @@ class BinarySensor(BinarySensorEntity):
             return
 
         now = dt_util.now()
+
+
+        self._calculate_earliest_start_time()
+        self._calculate_latest_end_time()
 
         # earliest_start always refers to today
         earliest_start = datetime.combine(now, self._earliest_start_time, now.tzinfo)
@@ -429,3 +447,44 @@ class BinarySensor(BinarySensorEntity):
             and duration_entity_state.last_changed > self._interval_start_time
         ):
             self._interval_start_time = duration_entity_state.last_changed
+
+    def _calculate_earliest_start_time(self):
+        self._earliest_start_time = self._default_earliest_start_time
+
+        if self._earliest_start_time_entity_id is None:
+            return
+
+        entity_state = self._hass.states.get(self._earliest_start_time_entity_id)
+        if entity_state is None or entity_state.state in ("unknown", "unavailable"):
+            return
+
+        parsed = dt_util.parse_time(entity_state.state)
+        if parsed is None:
+            _LOGGER.error(
+                f'Could not parse time from entity {self._earliest_start_time_entity_id} '
+                f'state "{entity_state.state}".'
+            )
+            return
+
+        self._earliest_start_time = parsed
+
+    def _calculate_latest_end_time(self):
+        self._latest_end_time = self._default_latest_end_time
+
+        if self._latest_end_time_entity_id is None:
+            return
+
+        entity_state = self._hass.states.get(self._latest_end_time_entity_id)
+        if entity_state is None or entity_state.state in ("unknown", "unavailable"):
+            return
+
+        parsed = dt_util.parse_time(entity_state.state)
+        if parsed is None:
+            _LOGGER.error(
+                f'Could not parse time from entity {self._latest_end_time_entity_id} '
+                f'state "{entity_state.state}".'
+            )
+            return
+
+        self._latest_end_time = parsed
+        

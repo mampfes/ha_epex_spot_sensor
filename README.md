@@ -45,19 +45,25 @@ In case you would like to install manually:
 1. Earliest Start Time  
    Earliest time to start the appliance.
 
-2. Latest End Time  
+2. Earliest Start Time entity
+    Optional entity for dynamic start time. If entity is set, it replaces the static start time. (for details see ![Helper Sensor](/EXAMPLES.md))
+
+3. Latest End Time  
    Latest time to end the appliance. Set it to same value as earliest start time to cover 24h. If set to smaller value than earliest start time, it automatically refers to following day.
 
-3. Duration  
+4.Latest End Time entity
+   Optional entity for dynamic end time. If entity is set, it replaces the static end time.
+
+5. Duration  
    Required duration to complete the appliance.
 
-4. Remaining Duration Entity  
+6. Remaining Duration Entity  
    Optional entity which indicates the remaining duration. If entity is set, it replaces the static duration. If the state of the `Remaining Duration Entity` changes between `Earliest Start Time` and `Latest End Time`, the configured `Earliest Start Time` will be ignore and the latest change time of the `Remaining Duration Entity` will the used instead.
 
-5. Price Mode  
+7. Price Mode  
    Selects whether the sensor shall react on the cheapest or the most expensive prices between `Earliest Start Time` and `Latest End Time`.
 
-6. Interval Mode  
+8. Interval Mode  
    Selects whether the specified duration shall be completed in a single, contiguous interval or can be split into multiple, not contiguous intervals (`intermittend`).
 
 ## Sensor Attributes
